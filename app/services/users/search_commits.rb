@@ -2,13 +2,14 @@
 
 require 'httpclient'
 
-module User
-  class SearchRepos
+module Users
+  class SearchCommits
     include ServiceObject
 
     # @login [Hash] Github login
-    def initialize(login)
-      @login = login
+    def initialize(params)
+      @login = params['login']
+      @repo_name = params['repo']
     end
 
     def call
@@ -26,25 +27,27 @@ module User
 
     private
 
-    attr_reader :login
+    attr_reader :login, :repo_name
 
     def validate!
       handle_success('valid')
     end
 
     def handle_request
-      repos_data = fetch_repos
+      repos_data = fetch_repo
 
-      repos = repos_data.map { |repo| { name: repo['name'], created_at: repo['created_at'] } }[0, 10]
+      repos = repos_data.map do |repo|
+                { message: repo['commit']['message'], commit_date: repo['commit']['committer']['date'] }
+              end [0, 10]
       {
-        user: {
-          name: login
-        },
-        repositories: repos
+        repo: {
+          name: repo_name,
+          commits: repos
+        }
       }
     end
 
-    def fetch_repos
+    def fetch_repo
       client = HTTPClient.new
       response = client.request(:get, address)
 
@@ -59,7 +62,7 @@ module User
     def address
       # TODO: fetch address from env
       # TODO: use URI::Generic.build
-      "https://api.github.com/users/#{login}/repos"
+      "https://api.github.com/repos/#{login}/#{repo_name}/commits"
     end
   end
 end

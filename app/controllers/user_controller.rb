@@ -3,13 +3,13 @@
 # Processing user requests
 class UserController < ApplicationController
   def show
-    result = User::SearchRepos.new(login_param).call
+    result = Users::SearchRepos.new(login_param).call
 
     render json: result
   end
 
   def repo
-    result = User::SearchCommits.new(repo_params).call
+    result = Users::SearchCommits.new(repo_params).call
 
     render json: result
   end
